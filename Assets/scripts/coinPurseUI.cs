@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 
-public class coinPurseUI : MonoBehaviour
+public class CoinPurseUI : MonoBehaviour
 {
     private TextMeshProUGUI coinText;
 
@@ -12,6 +12,7 @@ public class coinPurseUI : MonoBehaviour
         coinText = GetComponent<TextMeshProUGUI>();
     }
 
+    // Update the coin text display
     public void UpdateCoinText(CoinPurse coinPurse)
     {
         coinText.text = coinPurse.coins.ToString();

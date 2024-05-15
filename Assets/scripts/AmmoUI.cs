@@ -6,7 +6,6 @@ using TMPro;
 public class AmmoUI : MonoBehaviour
 {
     private TextMeshProUGUI ammoText;
-
     public GunController gunController;
 
     void Start()
@@ -16,23 +15,20 @@ public class AmmoUI : MonoBehaviour
 
     void Update()
     {
-        // Update the displayed ammo count
         UpdateAmmoText();
     }
 
+    // Update the displayed ammo count
     void UpdateAmmoText()
     {
-        // Check if GunController reference is valid
         if (gunController != null)
         {
-            // Display "Reloading" if the gun is currently reloading
             if (gunController.IsReloading())
             {
                 ammoText.text = "Reloading...";
             }
             else
             {
-                // Display the current ammo in the magazine and total ammo count
                 ammoText.text = "Mag: " + gunController.GetCurrentAmmoInMag() + " / " + gunController.GetCurrentAmmo();
             }
         }

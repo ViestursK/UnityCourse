@@ -2,28 +2,17 @@
 
 namespace BrokenVector.LowPolyFencePack
 {
-    /// <summary>
-    /// This class manages the door animations.
-    /// It needs the legacy animation component.
-    /// </summary>
     [RequireComponent(typeof(Animation))]
     public class DoorController : MonoBehaviour
     {
-
-        /// <summary>
-        /// door state: Open or Closed
-        /// </summary>
         public enum DoorState
         {
             Open,
             Closed
         }
 
-        /// <summary></summary>
-        /// <returns>
-        /// returns and sets the current door state
-        /// </returns>
-        public DoorState CurrentState {
+        public DoorState CurrentState
+        {
             get
             {
                 return currentState;
@@ -32,15 +21,13 @@ namespace BrokenVector.LowPolyFencePack
             {
                 currentState = value;
                 Animate();
+                UpdateCollider();
+                UnityEngine.Debug.Log("Door state changed to: " + currentState);
             }
         }
-        /// <returns>
-        /// returns wether the door is currently open or closed
-        /// </returns>
+
         public bool IsDoorOpen { get { return CurrentState == DoorState.Open; } }
-        /// <returns>
-        /// returns wether the door is currently open or closed
-        /// </returns>
+
         public bool IsDoorClosed { get { return CurrentState == DoorState.Closed; } }
 
         public DoorState InitialState = DoorState.Closed;
@@ -53,20 +40,21 @@ namespace BrokenVector.LowPolyFencePack
 
         private Animation animator;
         private DoorState currentState;
+        private Collider doorCollider;
 
         void Awake()
         {
             animator = GetComponent<Animation>();
+            doorCollider = GetComponent<Collider>();
+
             if (animator == null)
             {
-                Debug.LogError("Every DoorController needs an Animator.");
+                UnityEngine.Debug.LogError("Every DoorController needs an Animator.");
                 return;
             }
-            
-            // animator settings
+
             animator.playAutomatically = false;
 
-            // prepare animation clips
             openAnimation.legacy = true;
             closeAnimation.legacy = true;
             animator.AddClip(openAnimation, DoorState.Open.ToString());
@@ -74,41 +62,38 @@ namespace BrokenVector.LowPolyFencePack
         }
 
         void Start()
-        {            
-            // a little hack, to set the initial state
+        {
             currentState = InitialState;
             var clip = GetCurrentAnimation();
             animator[clip].speed = 9999;
             animator.Play(clip);
+            UpdateCollider();
         }
 
-        /// <summary>
-        /// Closes the door.
-        /// </summary>
+        // Close the door
         public void CloseDoor()
         {
             if (IsDoorClosed)
                 return;
 
             CurrentState = DoorState.Closed;
+            UnityEngine.Debug.Log("CloseDoor called");
         }
 
-        /// <summary>
-        /// Opens the door.
-        /// </summary>
+        // Open the door
         public void OpenDoor()
         {
             if (IsDoorOpen)
                 return;
 
             CurrentState = DoorState.Open;
+            UnityEngine.Debug.Log("OpenDoor called");
         }
 
-        /// <summary>
-        /// Changes the current door state.
-        /// </summary>
+        // Toggle the door state
         public void ToggleDoor()
         {
+            UnityEngine.Debug.Log("ToggleDoor called. Current state: " + currentState);
             if (IsDoorOpen)
                 CloseDoor();
             else
@@ -120,11 +105,21 @@ namespace BrokenVector.LowPolyFencePack
             var clip = GetCurrentAnimation();
             animator[clip].speed = AnimationSpeed;
             animator.Play(clip);
+            UnityEngine.Debug.Log("Animate called with clip: " + clip);
         }
 
         private string GetCurrentAnimation()
         {
             return CurrentState.ToString();
+        }
+
+        private void UpdateCollider()
+        {
+            if (doorCollider != null)
+            {
+                doorCollider.enabled = IsDoorClosed;
+                UnityEngine.Debug.Log("UpdateCollider called. Collider enabled: " + doorCollider.enabled);
+            }
         }
     }
 }

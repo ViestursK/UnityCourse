@@ -9,6 +9,7 @@ public class CoinPurse : MonoBehaviour
 
     public UnityEvent<CoinPurse> OnCoinCollected;
 
+    // Increment coin count and invoke event
     public void CoinCollected()
     {
         coins++;

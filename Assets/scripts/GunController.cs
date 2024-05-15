@@ -1,7 +1,6 @@
 using UnityEngine;
 using System.Collections;
 using UnityEngine.UI;
-using System;
 
 public class GunController : MonoBehaviour
 {
@@ -10,6 +9,8 @@ public class GunController : MonoBehaviour
     public int magSize = 30;
     public int maxAmmo = 300;
     public float reloadTime = 1.5f;
+    public int damage = 1;
+    public float shotForce = 50f;
 
     [Header("Weapon Sway")]
     public float swayAmount = 0.02f;
@@ -24,22 +25,31 @@ public class GunController : MonoBehaviour
     public float shakeIntensity = 0.1f;
 
     bool canShoot;
-    bool isReloading; 
+    bool isReloading;
     int currentAmmoInMag;
     int currentAmmo;
 
-    //ADS
     public Vector3 hipPosition;
     public Vector3 adsPosition;
     public float adsSpeed = 9f;
 
-    //muzzle flash
     public UnityEngine.UI.Image muzzleFlashImage;
     public Sprite[] muzzleFlashSprites;
 
     private Vector3 initialPosition;
 
     void Start()
+    {
+        InitializeGun();
+    }
+
+    private void OnEnable()
+    {
+        InitializeGun();
+    }
+
+    // Initialize gun properties and states
+    private void InitializeGun()
     {
         currentAmmo = maxAmmo;
         currentAmmoInMag = magSize;
@@ -48,15 +58,20 @@ public class GunController : MonoBehaviour
         initialPosition = transform.localPosition;
     }
 
-    private void Update()
+    void Update()
     {
+        if (PauseMenu.IsPaused)
+        {
+            return;
+        }
+
         DetermineAim();
 
         if (Input.GetMouseButton(0) && canShoot && currentAmmoInMag > 0 && !isReloading)
         {
             canShoot = false;
             currentAmmoInMag--;
-            StartCoroutine(Shoot());
+            Shoot();
             StartCoroutine(MuzzleFlash());
             ApplyKickback();
             StartCoroutine(CameraShake());
@@ -70,7 +85,25 @@ public class GunController : MonoBehaviour
         ApplyWeaponSway();
     }
 
-    IEnumerator Shoot()
+    // Handle the shooting mechanism
+    void Shoot()
+    {
+        RaycastHit hit;
+        if (Physics.Raycast(Camera.main.transform.position, Camera.main.transform.forward, out hit, 100f))
+        {
+            TicTacEnemy enemy = hit.transform.GetComponent<TicTacEnemy>();
+            if (enemy != null)
+            {
+                enemy.TakeDamage(damage, hit.point);
+                Vector3 shotDirection = hit.point - Camera.main.transform.position;
+                enemy.ApplyForce(shotDirection.normalized * shotForce);
+            }
+        }
+
+        StartCoroutine(ShootCooldown());
+    }
+
+    IEnumerator ShootCooldown()
     {
         yield return new WaitForSeconds(fireRate);
         canShoot = true;
@@ -87,9 +120,8 @@ public class GunController : MonoBehaviour
 
     IEnumerator Reload()
     {
-        isReloading = true; 
+        isReloading = true;
 
-        // Lower the gun for reload
         Vector3 startReloadPosition = transform.localPosition;
         Vector3 endReloadPosition = new Vector3(startReloadPosition.x, startReloadPosition.y - 0.2f, startReloadPosition.z);
 
@@ -113,14 +145,16 @@ public class GunController : MonoBehaviour
             currentAmmoInMag += currentAmmo;
             currentAmmo = 0;
         }
-        isReloading = false; 
+        isReloading = false;
     }
 
+    // Apply kickback effect after shooting
     void ApplyKickback()
     {
         transform.localPosition -= Vector3.forward * kickbackForce;
     }
 
+    // Apply weapon sway based on mouse movement
     void ApplyWeaponSway()
     {
         float movementX = -Input.GetAxis("Mouse X") * swayAmount;
@@ -152,16 +186,15 @@ public class GunController : MonoBehaviour
         Camera.main.transform.localPosition = originalPosition;
     }
 
-
+    // Adjust gun position based on aiming down sights
     void DetermineAim()
     {
         Vector3 target = Input.GetMouseButton(1) ? adsPosition : hipPosition;
-
-        // interpolate between current position and target position
         Vector3 desiredPosition = Vector3.Lerp(transform.localPosition, target, Time.deltaTime * adsSpeed);
         transform.localPosition = desiredPosition;
     }
 
+    // Getters for reloading and ammo count
     public bool IsReloading()
     {
         return isReloading;
